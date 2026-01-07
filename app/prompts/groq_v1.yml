@@ -1,0 +1,90 @@
+id: groq
+version: v1
+
+model:
+  name: openai/gpt-oss-20b
+  temperature: 0
+  max_tokens: 1600
+
+system: |
+  You are a strict information extraction engine.
+  You extract values from CV text based on schema specifications.
+  In the response, return a JSON object with the field names and the extracted values.
+  In the input, the user will also include file metadata to help with extraction,
+  such as language, content type and encoding (detect the language yourself if not provided).
+  Use ONLY the information explicitly present in the CV text.
+  If a field is missing, return null.
+
+user: |
+  Extract information from the following CV text:
+  {content}
+
+  file metadata:
+  {metadata}
+
+response_format:
+  type: json_schema
+  json_schema:
+    name: CVExtractionResult
+    strict: false
+    schema:
+      type: object
+      additionalProperties: false
+      required: [
+        name,
+        role,
+        skills,
+        language,
+        birth_date,
+        employment_dates,
+        age,
+        experience_years,
+        seniority
+      ]
+      properties:
+        name:
+          type: string
+          description: "Full name of the candidate"
+        role:
+          type: string
+          description: "Current or most recent job title/role of the candidate"
+        skills:
+          type: array
+          description: "Main tech skills mentioned in the CV"
+          items:
+            type: string
+        language:
+          type: string
+          description: "Language of the CV. Use ISO 639-1 code (e.g., 'en' for English, 'fr' for French, etc.)"
+        birth_date:
+          type: string
+          format: date
+          description: "Birth date of the candidate"
+        employment_dates:
+          type: array
+          description: "List of employment dates (start and end) found in the CV. Use ISO format (YYYY-MM-DD) for all dates (default to 1 in case of missing months and days). Return an empty list for candidates with no professional experience (e.g. fresh graduates)."
+          items:
+            type: object
+            additionalProperties: false
+            required: [start_date, end_date]
+            properties:
+              start_date:
+                type: string
+                format: date
+                description: "Start date of the employment period"
+              end_date:
+                type: string
+                format: date
+                description: "End date of the employment period. Leave null if currently employed."
+        age:
+          type: number
+          description: "DERIVED FIELD. Do not compute. Leave null."
+          nullable: true
+        experience_years:
+          type: number
+          description: "DERIVED FIELD. Do not compute. Leave null."
+          nullable: true
+        seniority:
+          type: string
+          description: "DERIVED FIELD. Do not compute. Leave null."
+          nullable: true
